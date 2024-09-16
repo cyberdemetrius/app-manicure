@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Aplicativo para Manicure</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f8e8ee; /* Rosa pastel */
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #f4a460; /* Amarelo pastel */
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"], input[type="date"], input[type="time"], select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #f4a460; /* Amarelo pastel */
+            color: #fff;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+        .excluir-btn {
+            background-color: #ff0000; /* Vermelho */
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Aplicativo para Manicure</h1>
+
+    <h2>Agendamentos</h2>
+    <form id="form-agendamento" method="POST" action="/agendar_servico">
+        <label for="cliente">Nome do Cliente:</label>
+        <input type="text" id="cliente" name="cliente" required>
+        <label for="contato">Contato:</label>
+        <input type="text" id="contato" name="contato" required>
+        <label for="servico">Serviço:</label>
+        <select id="servico" name="servico" required>
+            {% for servico in servicos %}
+                <option value="{{ servico }}">{{ servico }}</option>
+            {% endfor %}
+        </select>
+        <label for="data">Data:</label>
+        <input type="date" id="data" name="data" required>
+        <label for="hora">Hora:</label>
+        <input type="time" id="hora" name="hora" required>
+        <button type="submit">Agendar Serviço</button>
+    </form>
+
+    <h3>Agenda Semanal</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Contato</th>
+                <th>Serviço</th>
+                <th>Data</th>
+                <th>Hora</th>
+                <th>Excluir</th>
+            </tr>
+        </thead>
+        <tbody id="agenda-semanal">
+            {% for agendamento in agendamentos %}
+                <tr>
+                    <td>{{ agendamento.cliente }}</td>
+                    <td>{{ agendamento.contato }}</td>
+                    <td>{{ agendamento.servico }}</td>
+                    <td>{{ agendamento.data }}</td>
+                    <td>{{ agendamento.hora }}</td>
+                    <td><button class="excluir-btn" data-index="{{ loop.index0 }}">X</button></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Estoque</h2>
+    <h3>Lixas de Unha: <span id="estoque-lixas">{{ estoque.lixas }}</span></h3>
+    <h3>Pares de Luvas: <span id="estoque-luvas">{{ estoque.luvas }}</span></h3>
+    <form id="form-entrada" method="POST" action="/registrar_entrada">
+        <label for="material">Material:</label>
+        <select id="material" name="material" required>
+            <option value="lixas">Lixas de Unha</option>
+            <option value="luvas">Pares de Luvas</option>
+        </select>
+        <label for="quantidade">Quantidade:</label>
+        <input type="number" id="quantidade" name="quantidade" required>
+        <button type="submit">Registrar Entrada</button>
+    </form>
+
+    <h2>Ganhos Semanais</h2>
+    <div id="ganhos-semanais"></div>
+    <button id="btn-calcular-ganhos">Calcular Ganhos</button>
+</div>
+
+<script>
+    // Capturar os formulários e botão
+    const formAgendamento = document.getElementById('form-agendamento');
+    const formEntrada = document.getElementById('form-entrada');
+    const btnCalcularGanhos = document.getElementById('btn-calcular-ganhos');
+
+    // Adicionar event listeners
+    formEntrada.addEventListener('submit', registrarEntrada);
+    btnCalcularGanhos.addEventListener('click', calcularGanhos);
+
+    // Delegar o evento de clique para a tabela
+    const agendaSemanal = document.getElementById('agenda-semanal');
+    agendaSemanal.addEventListener('click', function(event) {
+        if (event.target && event.target.classList.contains('excluir-btn')) {
+            excluirAgendamento(event);
+        }
+    });
+
+    // Função para excluir agendamento
+    async function excluirAgendamento(event) {
+        const index = event.target.dataset.index;
+
+        try {
+            const response = await fetch('/excluir_agendamento', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `index=${index}`
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro na requisição ao servidor');
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                alert(data.message);
+                // Atualizar a agenda semanal após a exclusão
+                atualizarAgendaSemanal(data.agendamentos);
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            console.error('Erro ao excluir agendamento:', error);
+            alert('Ocorreu um erro ao excluir o agendamento. Por favor, tente novamente mais tarde.');
+        }
+    }
+
+    // Função para atualizar a agenda semanal
+    function atualizarAgendaSemanal(agendamentos) {
+        const tabelaAgenda = document.getElementById('agenda-semanal');
+        tabelaAgenda.innerHTML = ''; // Limpar a tabela
+
+        agendamentos.forEach((agendamento, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${agendamento.cliente}</td>
+                <td>${agendamento.contato}</td>
+                <td>${agendamento.servico}</td>
+                <td>${agendamento.data}</td>
+                <td>${agendamento.hora}</td>
+                <td><button class="excluir-btn" data-index="${index}">X</button></td>
+            `;
+            tabelaAgenda.appendChild(row);
+        });
+    }
+
+    // Função para registrar entrada de materiais no estoque
+    async function registrarEntrada(event) {
+        event.preventDefault(); // Impede o comportamento padrão de envio do formulário
+
+        const formData = new FormData(formEntrada);
+
+        try {
+            const response = await fetch('/registrar_entrada', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro na requisição ao servidor');
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                alert(data.message);
+                document.getElementById('estoque-lixas').innerText = data.estoque.lixas;
+                document.getElementById('estoque-luvas').innerText = data.estoque.luvas;
+                formEntrada.reset();
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            console.error('Erro ao registrar entrada:', error);
+            alert('Ocorreu um erro ao registrar a entrada. Por favor, tente novamente mais tarde.');
+        }
+    }
+
+    // Função para calcular os ganhos semanais
+    async function calcularGanhos() {
+        try {
+            const response = await fetch('/calcular_ganhos', {
+                method: 'GET'
+            });
+
+            if (!response.ok) {
+                throw new Error('Erro na requisição ao servidor');
+            }
+
+            const data = await response.json();
+            const divGanhos = document.getElementById('ganhos-semanais');
+            divGanhos.innerHTML = '';
+
+            for (const [servico, valor] of Object.entries(data.ganhos)) {
+                const p = document.createElement('p');
+                p.innerText = `${servico}: R$ ${valor}`;
+                divGanhos.appendChild(p);
+            }
+
+            const total = document.createElement('p');
+            total.innerText = `Total: R$ ${data.total}`;
+            divGanhos.appendChild(total);
+        } catch (error) {
+            console.error('Erro ao calcular ganhos semanais:', error);
+            alert('Ocorreu um erro ao calcular os ganhos. Por favor, tente novamente mais tarde.');
+        }
+    }
+</script>
+</body>
+</html>
