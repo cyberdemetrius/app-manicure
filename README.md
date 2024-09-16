@@ -20,6 +20,7 @@ Como usar:
 - Pré-requisitos: 
     - Python 3 instalado 
     - Flask instalado (pip install Flask)
+    - Utilize o arquivo index.html dentro da pasta templates (Isso é importante para que o Flask encontre o template corretamente ao renderizar a página.)
 - Executar o aplicativo:
     - Abra o terminal na pasta do projeto e execute o comando python app.py.
     - Acesse o aplicativo no seu navegador web através do endereço http://127.0.0.1:5000/.
