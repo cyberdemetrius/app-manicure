@@ -1,4 +1,4 @@
-README - Aplicativo para Manicure
+# Aplicativo para Manicure
 
 Este é um aplicativo web simples desenvolvido em Python com o framework Flask para auxiliar manicures autônomas a gerenciar seus agendamentos, estoque de materiais e calcular seus ganhos semanais.
 
