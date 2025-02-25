@@ -1,4 +1,4 @@
-# Aplicativo para Manicure
+# App para Manicure (atividade da faculdade)
 
 ### Este é um projeto de aplicativo web simples desenvolvido em Python com o framework Flask para auxiliar manicures autônomas a gerenciar seus agendamentos, estoque de materiais e calcular seus ganhos semanais. Trata-se de uma atividade de Extensão da disciplina de Desenvolvimento em Python da minha faculdade de Defesa Cibernética. O projeto principal já foi entregue e era algo mais simples, porém, decidi continuar e fazer implementações (controle de estoque, cálculo de ganhos e etc), porém, precisei executar uma pausa nesse pequeno projeto para seguir com os estudos e carreira em Cibersegurança. 
 
